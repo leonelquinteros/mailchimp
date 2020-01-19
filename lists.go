@@ -1,9 +1,21 @@
 package mailchimp
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
+)
+
+// ListMember statuses
+const (
+	ListMemberStatusSubscribed    = "subscribed"
+	ListMemberStatusUnsubscribed  = "unsubscribed"
+	ListMemberStatusCleaned       = "cleaned"
+	ListMemberStatusPending       = "pending"
+	ListMemberStatusTransactional = "transactional"
 )
 
 // ListsResponse data
@@ -113,4 +125,82 @@ func (c Lists) Get(id int, listParams url.Values) (List, error) {
 	var r List
 	err := c.Client.Request("GET", "/lists/"+strconv.Itoa(id), listParams, nil, &r)
 	return r, err
+}
+
+// ListMember data
+type ListMember struct {
+	EmailAddress         string      `json:"email_address"`
+	EmailType            string      `json:"email_type,omitempty"`
+	Status               string      `json:"status"`
+	StatusIfNew          string      `json:"status_if_new,omitempty"` // Used on CreateOrUpdateMember
+	MergeFields          interface{} `json:"merge_fields,omitempty"`
+	Interests            interface{} `json:"interests,omitempty"`
+	Language             string      `json:"language,omitempty"`
+	Vip                  bool        `json:"vip,omitempty"`
+	Location             Location    `json:"location,omitempty"`
+	MarketingPermissions interface{} `json:"marketing_permissions,omitempty"`
+	IPSignup             string      `json:"ip_signup,omitempty"`
+	TimestampSignup      string      `json:"timestamp_signup,omitempty"`
+	IPOpt                string      `json:"ip_opt,omitempty"`
+	TimestampOpt         string      `json:"timestamp_opt,omitempty"`
+	Tags                 interface{} `json:"tags,omitempty"`
+}
+
+// ListMemberResponse data
+type ListMemberResponse struct {
+	ID                   string      `json:"id"`
+	EmailAddress         string      `json:"email_address"`
+	UniqueEmailID        string      `json:"unique_email_id"`
+	WebID                int         `json:"web_id"`
+	EmailType            string      `json:"email_type,omitempty"`
+	Status               string      `json:"status"`
+	UnsubscribeReason    string      `json:"unsubscribe_reason"`
+	MergeFields          interface{} `json:"merge_fields,omitempty"`
+	Interests            interface{} `json:"interests,omitempty"`
+	Stats                interface{} `json:"stats"`
+	Language             string      `json:"language,omitempty"`
+	Vip                  bool        `json:"vip,omitempty"`
+	Location             Location    `json:"location,omitempty"`
+	MarketingPermissions interface{} `json:"marketing_permissions,omitempty"`
+	IPSignup             string      `json:"ip_signup,omitempty"`
+	TimestampSignup      string      `json:"timestamp_signup,omitempty"`
+	IPOpt                string      `json:"ip_opt,omitempty"`
+	TimestampOpt         string      `json:"timestamp_opt,omitempty"`
+	MemberRating         int         `json:"member_rating,omitempty"`
+	Tags                 interface{} `json:"tags,omitempty"`
+}
+
+// CreateMember adds new member to a list
+func (c Lists) CreateMember(listID string, m ListMember) (ListMemberResponse, error) {
+	var r ListMemberResponse
+	err := c.Client.Request("POST", "/lists/"+listID+"/members", nil, m, &r)
+	return r, err
+}
+
+// CreateOrUpdateMember adds or update a member on a list
+func (c Lists) CreateOrUpdateMember(listID string, m ListMember) (ListMemberResponse, error) {
+	var r ListMemberResponse
+	hash := md5.Sum([]byte(strings.ToLower(m.EmailAddress)))
+	shash := hex.EncodeToString(hash[:])
+
+	err := c.Client.Request("PUT", "/lists/"+listID+"/members/"+shash, nil, m, &r)
+	return r, err
+}
+
+// UpdateMember on a list
+func (c Lists) UpdateMember(listID string, m ListMember) (ListMemberResponse, error) {
+	var r ListMemberResponse
+	hash := md5.Sum([]byte(strings.ToLower(m.EmailAddress)))
+	shash := hex.EncodeToString(hash[:])
+
+	err := c.Client.Request("PATCH", "/lists/"+listID+"/members/"+shash, nil, m, &r)
+	return r, err
+}
+
+// DeleteMember on a list
+func (c Lists) DeleteMember(listID string, m ListMember) error {
+	hash := md5.Sum([]byte(strings.ToLower(m.EmailAddress)))
+	shash := hex.EncodeToString(hash[:])
+
+	return c.Client.Request("DELETE", "/lists/"+listID+"/members/"+shash, nil, nil, nil)
 }

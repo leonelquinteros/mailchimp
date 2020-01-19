@@ -115,8 +115,11 @@ func (c Client) Request(method, endpoint string, params url.Values, data, respon
 		err = errResp
 	} else {
 		// Unmarshal into response
-		err = json.Unmarshal(body, response)
+		if len(body) > 0 {
+			err = json.Unmarshal(body, response)
+		}
 	}
+
 	return err
 }
 
