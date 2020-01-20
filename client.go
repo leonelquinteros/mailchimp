@@ -3,14 +3,20 @@ package mailchimp
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"path"
+	"strings"
 )
 
-const username = "mailchimp.go"
+// Initial configuration
+const (
+	username      = "mailchimp.go"
+	apiHostFormat = "https://%s.api.mailchimp.com/3.0/"
+)
 
 // ClientConfig object used for client creation
 type ClientConfig struct {
@@ -34,10 +40,22 @@ type Client struct {
 	Transport http.RoundTripper
 }
 
-// NewClient constructor
-func NewClient(config ClientConfig) Client {
+// GetAPIHost returns the corresponding API Host for Mailchimp's API based on the provided Key
+func GetAPIHost(apiKey string) string {
+	parts := strings.Split(apiKey, "-")
+	if len(parts) > 0 {
+		return fmt.Sprintf(apiHostFormat, parts[len(parts)-1])
+	}
+	return ""
+}
+
+// New constructor from API Key
+func New(apiKey string) Client {
 	return Client{
-		config: config,
+		config: ClientConfig{
+			APIHost: GetAPIHost(apiKey),
+			APIKey:  apiKey,
+		},
 	}
 }
 

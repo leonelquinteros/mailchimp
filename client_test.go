@@ -7,12 +7,7 @@ import (
 )
 
 func getTestClient() Client {
-	cc := ClientConfig{
-		APIHost: os.Getenv("MAILCHIMP_API_HOST"),
-		APIKey:  os.Getenv("MAILCHIMP_API_KEY"),
-		Debug:   false,
-	}
-	return NewClient(cc)
+	return New(os.Getenv("MAILCHIMP_API_KEY"))
 }
 
 func TestClient(t *testing.T) {
